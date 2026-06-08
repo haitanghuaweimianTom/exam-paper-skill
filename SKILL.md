@@ -280,6 +280,18 @@ Guiding questions for students:
 - Vocabulary: context-based questions
 - Writing: essay prompts with structure guides
 
+### Economics / Econometrics
+- Regression models: always use math mode for equations, e.g. `$y_i = \beta_0 + \beta_1 x_i + u_i$`
+- Matrix notation: `$\hat{\boldsymbol{\beta}} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$`
+- Greek letters: `\beta`, `\sigma`, `\alpha`, `\delta` (LaTeX commands)
+- OLS assumptions: label as MLR.1~MLR.6 or SLR.1~SLR.5
+- Hypothesis tests: write t-stat and F-stat formulas explicitly
+- Panel data: use double subscripts `$y_{it}$`, fixed effects `$a_i$`
+- Difference-in-Differences: clearly write interaction term `$Post_t \times Treat_i$`
+- Heteroskedasticity: mention robust SE, BP test, White test, WLS/FGLS
+- Key topics: OLS derivation, BLUE/Gauss-Markov, consistency, asymptotic normality, omitted variable bias, dummy variables, LPM, heteroskedasticity, panel data (FD, FE, DiD)
+- Exam style: closed-book, 90-100 min, 100 points; mix of proofs, calculations, and applied analysis
+
 ### Chinese (Language)
 - Classical Chinese reading comprehension
 - Poetry analysis (意象, 手法, 情感)
