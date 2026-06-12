@@ -1,6 +1,6 @@
 ---
 name: exam-paper
-description: Generate exam papers, study guides, practice tests, and teaching materials from any subject. Extracts and synthesizes user-provided materials, generates "举一反三" questions, outputs beautiful compact MD and PDF via Pandoc + ctexart + xelatex.
+description: Generate exam papers, study guides, review books, and teaching materials from any subject. Extracts and synthesizes user-provided materials, generates transfer-oriented questions, and outputs compact Markdown + PDF via Pandoc + ctexart + xelatex.
 keywords:
   - exam-paper
   - 试卷
@@ -13,11 +13,14 @@ keywords:
   - ctexart-exam
   - 知识提炼
   - xelatex
+  - 跨学科
 ---
 
 # Exam Paper & Teaching Material Generation Skill
 
-Generate exam papers, practice tests, study guides, review books, and teaching materials from **any subject**. Works end-to-end: extract knowledge from user materials → synthesize → generate questions that encourage "举一反三" → output compact MD + PDF.
+Generate exam papers, practice tests, study guides, review books, and teaching materials from **any subject**. Works end-to-end: extract knowledge from user materials → synthesize → generate questions that encourage "举一反三" (transfer learning) → output compact MD + PDF.
+
+This skill is **content-type centric**, not subject-list centric. Whether the input is chemistry formulas, historical essays, legal cases, medical symptoms, or engineering diagrams, follow the same workflow and apply the corresponding content-type rules below.
 
 ## When to use
 
@@ -31,17 +34,18 @@ Generate exam papers, practice tests, study guides, review books, and teaching m
 
 - User only wants a simple text list (no PDF needed)
 - User provides a LaTeX `.tex` source file directly and only wants minor edits
-- User explicitly asks for interactive quiz / online test platform
+- User explicitly asks for an interactive quiz / online test platform
 
 ## Workflow Overview
 
 1. **Explore materials** — read user-provided files (PDF, DOCX, Markdown, images via OCR if needed). Identify the subject and scope.
 2. **Extract & synthesize** — identify core knowledge points (考点), key formulas, common patterns, and exam traps.
 3. **Design document structure** — choose document type (exam paper / study guide / review book / practice questions) and outline chapters/sections.
-4. **Write markdown** — use proper YAML frontmatter, correct formula rendering, Chinese typography rules, and no page-break horizontal rules.
-5. **Generate questions** — for each topic, create 基础题、变式题、综合题、开放题 with detailed answers.
-6. **Compile PDF** — use pandoc + xelatex. Verify no rendering warnings/errors.
-7. **Verify** — check PDF visually for formula display, layout, page breaks, orphan lines, and missing characters.
+4. **Apply content-type rules** — decide which rules from this skill apply: formulas, tables, diagrams, code, multilingual text, citations/proofs, etc.
+5. **Write markdown** — use proper YAML frontmatter, correct formula rendering, Chinese typography rules, and no page-break horizontal rules.
+6. **Generate questions** — for each topic, create 基础题、变式题、综合题、开放题 with detailed answers.
+7. **Compile PDF** — use pandoc + xelatex. Verify no rendering warnings/errors.
+8. **Verify** — check PDF visually for formula display, layout, page breaks, orphan lines, and missing characters.
 
 ## Document Types
 
@@ -49,7 +53,7 @@ Generate exam papers, practice tests, study guides, review books, and teaching m
 - Purpose: simulate a real exam; compact and printable
 - Layout: minimal title, no headers/footers/page numbers, 10.5–11pt, 2.0–2.5cm margins
 - Content: instructions, multiple question types, answer key (optional, at end)
-- Include reference data (constants, tables) if needed
+- Include reference data (constants, tables, terminology) if needed
 
 ### Type B: Study Guide / Teaching Material (讲义)
 - Purpose: systematic learning material
@@ -185,65 +189,167 @@ Chinese punctuation inside math mode may cause font warnings. Keep punctuation s
 - Wrong: `$x = 1。$`
 - Correct: `$x = 1$。`
 
-## Text and Formula Rendering Rules
+## Content-Type Rules (Universal)
 
-### 1. Unicode Superscript/Subscript Conversion
+Instead of memorizing per-subject rules, identify which content types appear in the material and apply the matching rules below.
 
-**ALL Unicode superscript/subscript characters MUST be converted to LaTeX math mode.** Never leave them as raw Unicode — they will render as squares/blocks in the PDF.
+### 1. Formulas and Symbols
 
-Conversion map:
+- Always use LaTeX math mode for formulas, Greek letters, operators, subscripts, and superscripts.
+- Common commands: `\alpha`, `\beta`, `\gamma`, `\theta`, `\sigma`, `\mu`, `\pi`, `\sum`, `\int`, `\prod`, `\frac`, `\sqrt`, `\lim`, `\infty`, `\pm`, `\times`, `\div`, `\leq`, `\geq`, `\neq`, `\approx`.
+- Wrap Chinese text inside math mode with `\text{...}`.
+- Convert Unicode subscripts/superscripts to LaTeX (e.g., H₂O → H$_2$O, x² → $x^2$).
+- Avoid Unicode logic symbols (`∧`, `∨`, `¬`, `→`); use `\land`, `\lor`, `\neg`, `\rightarrow`.
 
-| Unicode | LaTeX | Example |
-|---------|-------|---------|
-| ₀-₉ (U+2080-2089) | `$_n$` | O₂ → O$_2$ |
-| ² (U+00B2) | `$^2$` | Cu²⁺ → Cu$^{2+}$ |
-| ³ (U+00B3) | `$^3$` | Fe³⁺ → Fe$^{3+}$ |
-| ⁺ (U+207A) | `$^+$` | Ag⁺ → Ag$^+$ |
-| ⁻ (U+207B) | `$^-$` | Cl⁻ → Cl$^-$ |
-| ⁰-⁹ (U+2070-2079) | `$^n$` | CO₃²⁻ → CO$_3^{2-}$ |
+**Example matrix**:
 
-**Combined superscripts/subscripts:** Write as a single math mode expression:
-- Cu²⁺ → `Cu$^{2+}$` (NOT `Cu$^2$$^+$`)
-- SO₄²⁻ → `SO$_4^{2-}$` (NOT `SO$_4$$^{2-}$`)
-- CO₃²⁻ → `CO$_3^{2-}$`
-- HCO₃⁻ → `HCO$_3^-$`
-- Fe³⁺ → `Fe$^{3+}$`
-- OH⁻ → `OH$^-$`
-- NH₄⁺ → `NH$_4^+$`
-
-### 2. Chinese Characters Inside Math Mode
-
-When Chinese text appears inside `$...$`, wrap it with `\text{...}`. Otherwise xelatex will try to render Chinese with the math font and emit `Missing character in font latinmodern-math` warnings.
-
-| Wrong | Correct |
-|-------|---------|
-| `$\{有毛, 吃草, 黑条纹\}$` | `$\{\text{有毛}, \text{吃草}, \text{黑条纹}\}$` |
-| `$P(是)$` | `$P(\text{是})$` |
-| `$\xrightarrow{点燃}$` | `$\xrightarrow{\text{点燃}}$` |
-
-### 3. Unicode Logic Symbols
-
-Avoid Unicode logic symbols such as `∧` (U+2227), `∨` (U+2228), `¬` (U+00AC), `→` (U+2192) inside code blocks or plain text where the monospace font may lack glyphs. Use LaTeX commands instead:
-
-| Unicode | LaTeX |
-|---------|-------|
-| ∧ | `\land` or `\wedge` |
-| ∨ | `\lor` or `\vee` |
-| ¬ | `\neg` |
-| → | `\rightarrow` or `\Rightarrow` |
-| ↔ | `\leftrightarrow` |
-| ∀ | `\forall` |
-| ∃ | `\exists` |
-
-### 4. Subscripts/Superscripts in Tables
-
-When subscripts/superscripts appear in markdown tables, ensure each cell's math mode is complete:
-
-```markdown
-| CO$_3^{2-}$ | BaCl$_2$ 溶液 | 白色沉淀 |
+```latex
+$$
+\mathbf{A} = \begin{bmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{bmatrix}
+$$
 ```
 
-NOT: `| CO^{2-}$ |` (missing opening `$` and subscript)
+**Example piecewise function**:
+
+```latex
+$$
+f(x) = \begin{cases} x, & x \geq 0 \\ 0, & x < 0 \end{cases}
+$$
+```
+
+### 2. Tables and Comparisons
+
+- Use markdown tables for comparisons, terminology mappings, and summary sheets.
+- Ensure every cell containing math is fully wrapped in `$...$`.
+- For very long tables, consider splitting or reducing font size in the frontmatter.
+- Avoid multi-line content inside a single table cell; use separate rows instead.
+
+**Example**:
+
+```markdown
+| 概念 | 定义 | 公式 |
+|-----|------|------|
+| 熵 | 系统不确定性的度量 | $H(X) = -\sum p_i \log p_i$ |
+| 条件熵 | 已知 $Y$ 后 $X$ 的不确定性 | $H(X|Y) = -\sum p(x,y) \log p(x|y)$ |
+```
+
+### 3. Diagrams and Figures
+
+You have three ways to include diagrams, depending on complexity:
+
+1. **TikZ inside markdown** — best for simple geometry, arrows, trees, and anything that should stay vector in PDF.
+2. **matplotlib helper script** — best for coordinate systems, force diagrams, bar/line charts, Venn diagrams, flowcharts, and triangles.
+3. **External image** — for hand-drawn or complex figures, include with `![caption](path.png)`.
+
+#### 3.1 TikZ in markdown
+
+Use raw LaTeX blocks (works with `--from markdown+raw_tex`):
+
+```latex
+\begin{tikzpicture}
+  \node (A) at (0,0) {A};
+  \node (B) at (3,0) {B};
+  \draw[->] (A) -- (B) node[midway,above] {$f$};
+\end{tikzpicture}
+```
+
+More examples:
+
+```latex
+% Right triangle
+\begin{tikzpicture}
+  \draw (0,0) -- (4,0) -- (4,3) -- cycle;
+  \node at (-0.2,-0.2) {A};
+  \node at (4.2,-0.2) {B};
+  \node at (4.2,3.2) {C};
+\end{tikzpicture}
+```
+
+```latex
+% Tree / hierarchy
+\begin{tikzpicture}
+  \node {Root}
+    child {node {Left}}
+    child {node {Right}};
+\end{tikzpicture}
+```
+
+#### 3.2 Using the bundled matplotlib helper
+
+The skill includes `tools/diagram_tools.py` with ready-to-use functions. Call them from your generation script:
+
+```python
+from tools.diagram_tools import (
+    coordinate_system, force_diagram, geometry_triangle,
+    bar_chart, line_chart, venn_diagram, flowchart
+)
+
+# Example: coordinate system with points and segments
+coordinate_system(
+    points=[(1, 2), (-2, -1)],
+    segments=[((0, 0), (1, 2))],
+    labels={0: "P", 1: "Q"},
+    output_path="output/diagram_coord.png"
+)
+
+# Example: free-body force diagram
+force_diagram(
+    forces=[
+        {"x": 2, "y": 1, "label": "F1", "color": "red"},
+        {"x": -1, "y": 2, "label": "F2", "color": "blue"},
+    ],
+    output_path="output/diagram_forces.png"
+)
+
+# Example: bar chart
+bar_chart(
+    categories=["A", "B", "C"],
+    values=[10, 20, 15],
+    output_path="output/diagram_bar.png",
+    title="Sample Comparison"
+)
+```
+
+Then embed the generated image in markdown:
+
+```markdown
+![坐标系示例](output/diagram_coord.png)
+```
+
+#### 3.3 External images
+
+If the user provides images or you draw them elsewhere, embed normally:
+
+```markdown
+![受力分析图](images/force_diagram.png)
+```
+
+Keep image resolution at least 150 DPI for print quality.
+
+### 4. Code and Pseudocode
+
+- Use fenced code blocks with language identifier for actual code.
+- For pseudocode, use numbered lists or plain code blocks without language tag.
+- Ensure monospace fonts contain glyphs for any special Unicode used.
+
+```markdown
+```python
+def foo(x):
+    return x + 1
+```
+```
+
+### 5. Multilingual and Specialized Text
+
+- Classical Chinese, foreign language passages, legal articles, medical terminology: keep as normal text, but mark special terms with quotes or emphasis.
+- For terminology lists, use tables with original term / definition / symbol columns.
+- Romanize or transliterate where helpful, but preserve original characters for accuracy.
+
+### 6. Theorems, Proofs, and Citations
+
+- Use section headings or bold labels for theorems, lemmas, corollaries, and proofs.
+- End proofs with a clear marker such as **证毕** or `\square` if in math mode.
+- For citation-style references, use numbered lists or parenthetical notes.
 
 ## Python Raw-String Traps When Generating Markdown
 
@@ -434,6 +540,94 @@ Guiding questions for students:
 - "如果换成铁粉而不是锌粉，结论有何不同？"
 - "滤液滤渣问题中，'一定'和'可能'的区别是什么？"
 
+## Subject Adaptation Framework
+
+This skill is designed to work with **any subject**. Use the following framework instead of looking up a fixed subject list.
+
+### Step 1: Identify the dominant content types
+
+Ask: what does this subject primarily use?
+- Formulas and symbols
+- Tables and comparisons
+- Diagrams and figures
+- Code and algorithms
+- Long text passages
+- Legal/medical/engineering cases
+- Multilingual terminology
+
+### Step 2: Apply the matching Content-Type Rules
+
+Map each dominant content type to the rules in the "Content-Type Rules" section above.
+
+### Step 3: Capture subject-specific conventions
+
+Note down:
+- Common symbols and notation
+- Standard abbreviations
+- Typical question formats
+- Common traps or grading points
+- Required reference data (constants, tables, terminology)
+
+### Step 4: Generate and compile
+
+Use the appropriate frontmatter, question templates, and compilation command.
+
+### New Subject Quick-Start Template
+
+When extending this skill to a new subject, fill in:
+
+```markdown
+## 学科名称
+
+- 核心内容类型：公式 / 图表 / 代码 / 文本 / 病例 / 法条 / 工程图 / …
+- 常用 LaTeX 宏包/命令：
+- 典型题型：选择题 / 判断题 / 计算题 / 证明题 / 简答题 / 案例分析 / …
+- 常见符号与约定：
+- 易错排版点：
+- 推荐 frontmatter 调整（如有）：
+```
+
+## Example Subject Snapshots
+
+The following are **illustrative applications** of the framework, not an exhaustive subject list.
+
+### Example A: Natural Sciences (Chemistry / Physics / Biology)
+- Convert all Unicode subscripts/superscripts to LaTeX math mode
+- Chemical equations: `H$_2$SO$_4$`, ion charges `Cu$^{2+}$`
+- Reaction conditions: `$\xrightarrow{\text{点燃}}$`
+- Units: `m/s$^2$`, `kg·m/s$^2$`
+- Diagrams: molecular structures, force diagrams, cell diagrams via TikZ or matplotlib
+
+### Example B: Mathematics
+- Equations: `$x^2 + 2x - 3 = 0$`
+- Functions: `$f(x) = \sin x$`
+- Geometry: coordinates, angles, areas, TikZ diagrams
+- Statistics: probability, distributions, data tables
+
+### Example C: Humanities and Languages
+- Long reading passages as plain text
+- Terminology tables (term / definition / context)
+- Classical text annotations
+- Essay prompts with grading rubrics
+
+### Example D: Social Sciences (Economics / Political Science / Sociology)
+- Regression models and matrix notation in math mode
+- Causal diagrams (DAGs) via TikZ
+- Terminology and theory comparison tables
+- Case-study questions with structured analysis
+
+### Example E: Engineering and Computer Science
+- Pseudocode and actual code blocks
+- Algorithms with step-by-step examples
+- Circuit diagrams, flowcharts, system architecture diagrams
+- Mathematical modeling and unit analysis
+
+### Example F: Medicine and Law
+- Case-based questions with structured facts → analysis → conclusion
+- Terminology tables with Latin/legal terms
+- Diagnostic / legal reasoning flowcharts
+- Citation of articles, clauses, or guidelines
+
 ## Post-Compilation Checklist
 
 1. **Read PDF visually** — check formula rendering, layout, page breaks
@@ -460,72 +654,7 @@ Guiding questions for students:
 | Widow/orphan lines | No penalty settings | Add `\widowpenalty=10000` etc. |
 | Text overflow on right | Long Chinese sentences | `\emergencystretch=3em` |
 | `\neg` rendered as `eg` | Raw string `\n` replacement | Protect `\neg` before converting `\n` |
-
-## Subject Adaptations
-
-### Chemistry
-- Chemical equations with proper subscripts: `$\text{H}_2\text{SO}_4$` or `H$_2$SO$_4$`
-- Ion charges: `Cu$^{2+}$`, `SO$_4^{2-}$`
-- Reaction conditions: `$\xrightarrow{\text{点燃}}$`, `$\xrightarrow{\triangle}$`
-- Gas/precipitate symbols: `↑` `↓` (keep as Unicode)
-- Knowledge guide topics: metal activity, acid-base-salt, gas preparation, mass conservation
-
-### Physics
-- Units: `m/s$^2$`, `kg·m/s$^2$`, `10$^3$ Pa`
-- Circuit: use matplotlib or TikZ for diagrams
-- Force diagrams: vector arrows, free-body diagrams
-- Formulas: `$F = ma$`, `$E = mc^2$`
-
-### Biology
-- Cell organelles, DNA structure
-- Genetics: Punnett squares, heredity patterns
-- Ecosystem: food chains, energy pyramids
-
-### Math
-- Equations: `$x^2 + 2x - 3 = 0$`
-- Functions: `$f(x) = \sin x$`
-- Geometry: coordinates, angles, areas
-- Statistics: probability, data analysis
-
-### English
-- Reading comprehension passages
-- Grammar exercises (tense, voice, clauses)
-- Vocabulary: context-based questions
-- Writing: essay prompts with structure guides
-
-### Chinese (Language)
-- Classical Chinese reading comprehension
-- Poetry analysis (意象, 手法, 情感)
-- Essay writing (议论文, 记叙文)
-- Language usage: 病句修改, 词语辨析
-
-### Economics / Econometrics
-- Regression models: always use math mode for equations, e.g. `$y_i = \beta_0 + \beta_1 x_i + u_i$`
-- Matrix notation: `$\hat{\boldsymbol{\beta}} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$`
-- Greek letters: `\beta`, `\sigma`, `\alpha`, `\delta` (LaTeX commands)
-- OLS assumptions: label as MLR.1~MLR.6 or SLR.1~SLR.5
-- Hypothesis tests: write t-stat and F-stat formulas explicitly
-- Panel data: use double subscripts `$y_{it}$`, fixed effects `$a_i$`
-- Difference-in-Differences: clearly write interaction term `$Post_t \times Treat_i$`
-- Heteroskedasticity: mention robust SE, BP test, White test, WLS/FGLS
-- Key topics: OLS derivation, BLUE/Gauss-Markov, consistency, asymptotic normality, omitted variable bias, dummy variables, LPM, heteroskedasticity, panel data (FD, FE, DiD)
-- Exam style: closed-book, 90–100 min, 100 points; mix of proofs, calculations, and applied analysis
-
-### Game Theory
-- Represent games in normal form: `$G = \{N, (S_i), (u_i)\}$`
-- Use payoff matrices in markdown tables; ensure math symbols are in `$...$`
-- Key concepts: Nash equilibrium, dominant strategy, mixed strategy, subgame perfect equilibrium, Bayesian Nash equilibrium, perfect Bayesian equilibrium
-- Common solution methods: underline best responses, iterative deletion of dominated strategies, backward induction
-- Typical questions: find pure/mixed strategy Nash equilibria, solve extensive-form games, auction/game design, bargaining models
-
-### Artificial Intelligence
-- Knowledge representation: predicates, production rules, frames, semantic networks, knowledge graphs
-- Deterministic reasoning: natural deduction, resolution, clause sets
-- Uncertain reasoning: Bayes formula, CF method, fuzzy sets, Bayesian networks
-- Search: BFS, DFS, A\*, Minimax, alpha-beta pruning
-- Machine learning: supervised/unsupervised/reinforcement learning, overfitting/underfitting, evaluation metrics, decision trees, SVM, naive Bayes, K-Means
-- Neural networks: perceptron, activation functions, backpropagation, CNN, RNN, Transformer
-- When writing formulas, wrap Chinese labels with `\text{...}` and protect `\neg`, `\neq`, `\newpage` from raw-string conversion
+| `\forall` becomes form feed | Normal-string `\f` escape | Use raw strings for LaTeX |
 
 ## Output Directory Convention
 
