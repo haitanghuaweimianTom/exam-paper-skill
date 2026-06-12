@@ -15,20 +15,25 @@
 - **中文排版规范化**：中文引号、省略号、破折号、数学模式中文处理
 - **图表绘制支持**：
   - 内置 TikZ 矢量图模板（几何图、流程图、树形图等）
-  - 内置 matplotlib 绘图工具（坐标系、受力图、柱状图、折线图、韦恩图、流程图、三角形）
+  - 内置 matplotlib 绘图工具（坐标系、函数图像、数轴、受力图、柱状图、折线图、散点图、箱线图、韦恩图、流程图、概率树、三角形）
+- **生成质量检查**：`tools/quality_check.py` 自动扫描 markdown，发现直引号、水平分割线、数学模式中文、未闭合公式等常见问题
 - **跨学科通用框架**：不依赖固定学科列表，按「内容类型」抽象规则，任意学科均可扩展
+- **英文模式支持**：提供 `article` 类 frontmatter 模板，可生成纯英文试卷/讲义
 
 ## 安装
 
 ```bash
-# 安装到用户级 skill 目录（默认）
 bash install.sh
+```
 
+安装脚本会自动检查 `pandoc`、`xelatex`、`matplotlib` 等依赖是否已安装。
+
+```bash
 # 或安装到项目级 skill 目录
 bash install.sh /path/to/project/.claude/skills
 ```
 
-安装后，skill 目录下会生成 `SKILL.md` 与 `tools/`，Agent 即可识别并调用。
+安装后，skill 目录下会生成 `SKILL.md`、`tools/`、`examples/`、`assets/`，Agent 即可识别并调用。
 
 **依赖**：
 - Python 3.8+
@@ -52,6 +57,20 @@ Agent 会自动：
 4. 输出 Markdown 文件
 5. 调用 Pandoc 编译为 PDF
 6. 检查公式渲染、中文排版和缺字警告
+
+## 快速上手示例
+
+仓库包含可直接运行的示例脚本：
+
+```bash
+cd examples
+python generate_exam.py          # 生成中文期末试卷 PDF
+python generate_review_book.py   # 生成中文复习全书 PDF
+python generate_english_exam.py  # 生成英文试卷 PDF
+python generate_diagrams.py      # 批量生成各类图表 PNG
+```
+
+生成后查看 `examples/output/` 目录。
 
 ## 内容类型支持
 
@@ -78,39 +97,21 @@ Agent 会自动：
 
 任何未列出的学科，Agent 都可以根据 SKILL.md 中的「学科适配框架」自行推导规则。
 
-## 绘图示例
-
-以下图片全部由本 skill 的 `tools/diagram_tools.py` 实际生成：
-
-### 坐标系与几何
-
-![坐标系示例](assets/example_coordinate.png)
-
-![三角形示例](assets/example_triangle.png)
-
-### 受力分析
-
-![受力图示例](assets/example_forces.png)
-
-### 统计图表
-
-![柱状图示例](assets/example_bar.png)
-
-### 韦恩图与流程图
-
-![韦恩图示例](assets/example_venn.png)
-
-![流程图示例](assets/example_flowchart.png)
-
 ## 项目结构
 
 ```
 exam-paper-skill/
-├── install.sh       # 安装脚本
+├── install.sh       # 安装脚本（含依赖检查）
 ├── SKILL.md         # Skill 核心定义与使用规范
 ├── README.md        # 本文件
 ├── tools/           # 绘图与辅助工具
-│   └── diagram_tools.py
+│   ├── diagram_tools.py
+│   └── quality_check.py
+├── examples/        # 可直接运行的示例脚本
+│   ├── generate_exam.py
+│   ├── generate_review_book.py
+│   ├── generate_english_exam.py
+│   └── generate_diagrams.py
 └── assets/          # README 示例图片
     ├── example_coordinate.png
     ├── example_triangle.png
@@ -127,6 +128,10 @@ exam-paper-skill/
 - 补充数学模式中文字符处理、Unicode 逻辑符号规避、raw-string 转义陷阱
 - 增加选择题/判断题/计算题/简答题 Markdown 模板
 - 新增 TikZ 模板与 matplotlib 绘图工具，实现真正的图表绘制能力
+- 新增 `quality_check.py` 生成质量检查脚本
+- 新增 `examples/` 可直接运行的示例
+- `install.sh` 增加依赖检测
+- 新增英文文档 frontmatter 模板
 - 完善 PDF 编译命令与排错清单
 
 ## 贡献

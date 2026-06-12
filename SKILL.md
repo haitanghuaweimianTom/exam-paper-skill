@@ -153,7 +153,31 @@ sansfont: "Noto Serif CJK SC"
 ---
 ```
 
-**Critical:** ALL documents must include `\widowpenalty`, `\clubpenalty`, `\brokenpenalty` set to 10000 to prevent orphan/widow lines and unwanted page breaks. Always set `mainfont` and `sansfont` to a CJK font such as Noto Serif CJK SC.
+**Critical:** ALL documents must include `\widowpenalty`, `\clubpenalty`, `\brokenpenalty` set to 10000 to prevent orphan/widow lines and unwanted page breaks. For Chinese documents, always set `mainfont` and `sansfont` to a CJK font such as Noto Serif CJK SC.
+
+### Type E: English Document
+
+For non-CJK documents, use a Latin font and the standard `article` class:
+
+```yaml
+---
+title: "Calculus Final Review"
+subtitle: "Example English Review Book"
+fontsize: 11pt
+documentclass: article
+geometry: margin=2.2cm
+colorlinks: true
+header-includes: |
+  \setlength{\emergencystretch}{3em}
+  \linespread{1.2}
+  \widowpenalty=10000
+  \clubpenalty=10000
+  \brokenpenalty=10000
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  \usepackage{booktabs}
+---
+```
 
 ## CRITICAL: NO Horizontal Rules
 
@@ -276,12 +300,29 @@ More examples:
 
 #### 3.2 Using the bundled matplotlib helper
 
-The skill includes `tools/diagram_tools.py` with ready-to-use functions. Call them from your generation script:
+The skill includes `tools/diagram_tools.py` with ready-to-use functions:
+
+- `coordinate_system()`
+- `function_plot()`
+- `number_line()`
+- `force_diagram()`
+- `geometry_triangle()`
+- `bar_chart()`
+- `line_chart()`
+- `scatter_plot()`
+- `box_plot()`
+- `probability_tree()`
+- `venn_diagram()`
+- `flowchart()`
+
+Call them from your generation script:
 
 ```python
 from tools.diagram_tools import (
-    coordinate_system, force_diagram, geometry_triangle,
-    bar_chart, line_chart, venn_diagram, flowchart
+    coordinate_system, function_plot, number_line,
+    force_diagram, geometry_triangle,
+    bar_chart, line_chart, scatter_plot, box_plot,
+    probability_tree, venn_diagram, flowchart
 )
 
 # Example: coordinate system with points and segments
@@ -290,6 +331,20 @@ coordinate_system(
     segments=[((0, 0), (1, 2))],
     labels={0: "P", 1: "Q"},
     output_path="output/diagram_coord.png"
+)
+
+# Example: function plot
+function_plot(
+    lambda x: x ** 2,
+    x_range=(-3, 3),
+    output_path="output/diagram_function.png",
+    title=r"$y = x^2$"
+)
+
+# Example: number line
+number_line(
+    points=[-2, -1, 0, 1, 2],
+    output_path="output/diagram_numberline.png"
 )
 
 # Example: free-body force diagram
@@ -435,6 +490,32 @@ pandoc input.md -o output.pdf \
 ```
 
 Always inspect `pandoc.log` for `Missing character` or `Undefined control sequence` warnings.
+
+## Quality Check
+
+Before compiling, run `tools/quality_check.py` on your generated markdown to catch common mistakes early:
+
+```bash
+python tools/quality_check.py output/review.md
+```
+
+It checks for:
+- Horizontal rules `---` in content
+- Straight quotes used as Chinese quotes
+- Chinese characters inside math mode without `\text{}`
+- Unicode subscripts/superscripts not converted to LaTeX
+- Unicode logic symbols (`∧`, `∨`, `¬`, etc.) not converted
+- Control characters from corrupted LaTeX commands (e.g., `\forall` becoming form feed)
+- Unclosed inline math mode
+- Table cells with unclosed math mode
+- Adjacent math modes that should be merged
+
+A non-zero exit code is returned if any ERROR-level issue is found. Integrate this step into your generation pipeline:
+
+```python
+import subprocess
+subprocess.run(["python", "tools/quality_check.py", "output/review.md"], check=True)
+```
 
 ## Question Type Templates
 
