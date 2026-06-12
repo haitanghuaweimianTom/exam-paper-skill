@@ -97,6 +97,30 @@ python generate_diagrams.py      # 批量生成各类图表 PNG
 
 任何未列出的学科，Agent 都可以根据 SKILL.md 中的「学科适配框架」自行推导规则。
 
+## 绘图示例
+
+以下图片全部由本 skill 的 `tools/diagram_tools.py` 实际生成：
+
+**坐标系与几何**
+
+![坐标系示例](assets/example_coordinate.png)
+
+![三角形示例](assets/example_triangle.png)
+
+**受力分析**
+
+![受力图示例](assets/example_forces.png)
+
+**统计图表**
+
+![柱状图示例](assets/example_bar.png)
+
+**韦恩图与流程图**
+
+![韦恩图示例](assets/example_venn.png)
+
+![流程图示例](assets/example_flowchart.png)
+
 ## 项目结构
 
 ```
