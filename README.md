@@ -78,6 +78,30 @@ Agent 会自动：
 
 任何未列出的学科，Agent 都可以根据 SKILL.md 中的「学科适配框架」自行推导规则。
 
+## 绘图示例
+
+以下图片全部由本 skill 的 `tools/diagram_tools.py` 实际生成：
+
+### 坐标系与几何
+
+![坐标系示例](assets/example_coordinate.png)
+
+![三角形示例](assets/example_triangle.png)
+
+### 受力分析
+
+![受力图示例](assets/example_forces.png)
+
+### 统计图表
+
+![柱状图示例](assets/example_bar.png)
+
+### 韦恩图与流程图
+
+![韦恩图示例](assets/example_venn.png)
+
+![流程图示例](assets/example_flowchart.png)
+
 ## 项目结构
 
 ```
@@ -85,8 +109,15 @@ exam-paper-skill/
 ├── install.sh       # 安装脚本
 ├── SKILL.md         # Skill 核心定义与使用规范
 ├── README.md        # 本文件
-└── tools/           # 绘图与辅助工具
-    └── diagram_tools.py
+├── tools/           # 绘图与辅助工具
+│   └── diagram_tools.py
+└── assets/          # README 示例图片
+    ├── example_coordinate.png
+    ├── example_triangle.png
+    ├── example_forces.png
+    ├── example_bar.png
+    ├── example_venn.png
+    └── example_flowchart.png
 ```
 
 ## 最近改进
