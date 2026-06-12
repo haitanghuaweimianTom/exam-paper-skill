@@ -171,16 +171,24 @@ def flowchart(nodes, edges, output_path="diagram_flow.png"):
         edges: list of (from, to)
     """
     fig, ax = plt.subplots(figsize=(6, 4))
+    xs, ys = [], []
     for name, (x, y) in nodes.items():
         ax.text(x, y, name, ha="center", va="center",
                 bbox=dict(boxstyle="round,pad=0.3", facecolor="lightyellow", edgecolor="black"))
+        xs.append(x)
+        ys.append(y)
     for start, end in edges:
         x1, y1 = nodes[start]
         x2, y2 = nodes[end]
         ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
                     arrowprops=dict(arrowstyle="->", color="black"))
-    ax.set_xlim(-1, 7)
-    ax.set_ylim(-1, 5)
+    # Auto-scale limits with padding so arrows and labels fit
+    x_min, x_max = min(xs), max(xs)
+    y_min, y_max = min(ys), max(ys)
+    x_pad = max(1.0, (x_max - x_min) * 0.15)
+    y_pad = max(1.0, (y_max - y_min) * 0.3)
+    ax.set_xlim(x_min - x_pad, x_max + x_pad)
+    ax.set_ylim(y_min - y_pad, y_max + y_pad)
     ax.axis("off")
     return _save(fig, output_path)
 
