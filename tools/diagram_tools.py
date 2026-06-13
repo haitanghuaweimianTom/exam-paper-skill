@@ -286,31 +286,60 @@ def venn_diagram(labels, output_path="diagram_venn.png"):
 
 
 def flowchart(nodes, edges, output_path="diagram_flow.png"):
-    """Draw a simple flowchart.
+    """Draw a simple flowchart with proper boxes and edge-connected arrows.
 
     Args:
         nodes: dict {name: (x, y)}
         edges: list of (from, to)
     """
-    fig, ax = plt.subplots(figsize=(6, 4))
-    xs, ys = [], []
-    for name, (x, y) in nodes.items():
-        ax.text(x, y, name, ha="center", va="center",
-                bbox=dict(boxstyle="round,pad=0.3", facecolor="lightyellow", edgecolor="black"))
-        xs.append(x)
-        ys.append(y)
-    for start, end in edges:
-        x1, y1 = nodes[start]
-        x2, y2 = nodes[end]
-        ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
-                    arrowprops=dict(arrowstyle="->", color="black"))
-    # Auto-scale limits with padding so arrows and labels fit
+    from matplotlib.patches import FancyBboxPatch
+
+    # Estimate figure size from node spread
+    xs, ys = zip(*nodes.values())
     x_min, x_max = min(xs), max(xs)
     y_min, y_max = min(ys), max(ys)
-    x_pad = max(1.0, (x_max - x_min) * 0.15)
-    y_pad = max(1.0, (y_max - y_min) * 0.3)
-    ax.set_xlim(x_min - x_pad, x_max + x_pad)
-    ax.set_ylim(y_min - y_pad, y_max + y_pad)
+    width = max(5, (x_max - x_min) * 1.1 + 1.5)
+    height = max(2.5, (y_max - y_min) * 1.5 + 1.5)
+
+    fig, ax = plt.subplots(figsize=(width, height))
+
+    box_w, box_h = 1.0, 0.55
+    node_boxes = {}
+    for name, (x, y) in nodes.items():
+        rect = FancyBboxPatch(
+            (x - box_w / 2, y - box_h / 2), box_w, box_h,
+            boxstyle="round,pad=0.05,rounding_size=0.12",
+            facecolor="lightyellow", edgecolor="black", linewidth=1.2
+        )
+        ax.add_patch(rect)
+        ax.text(x, y, name, ha="center", va="center", fontsize=11)
+        node_boxes[name] = (x, y, box_w, box_h)
+
+    def _edge_point(x1, y1, x2, y2, w, h):
+        """Compute intersection point from center (x1,y1) to center (x2,y2) with box border."""
+        dx, dy = x2 - x1, y2 - y1
+        if abs(dx) < 1e-6 and abs(dy) < 1e-6:
+            return x1, y1
+        # Scale direction so it hits the box border
+        scale_x = float('inf') if abs(dx) < 1e-6 else (w / 2) / abs(dx)
+        scale_y = float('inf') if abs(dy) < 1e-6 else (h / 2) / abs(dy)
+        t = min(scale_x, scale_y)
+        return x1 + t * dx, y1 + t * dy
+
+    for start, end in edges:
+        x1, y1, w1, h1 = node_boxes[start]
+        x2, y2, w2, h2 = node_boxes[end]
+        sx, sy = _edge_point(x1, y1, x2, y2, w1, h1)
+        ex, ey = _edge_point(x2, y2, x1, y1, w2, h2)
+        ax.annotate("", xy=(ex, ey), xytext=(sx, sy),
+                    arrowprops=dict(arrowstyle="->", color="black", lw=1.2,
+                                    connectionstyle="arc3,rad=0"))
+
+    x_pad = max(0.4, (x_max - x_min) * 0.08)
+    y_pad = max(0.4, (y_max - y_min) * 0.15)
+    ax.set_xlim(x_min - box_w / 2 - x_pad, x_max + box_w / 2 + x_pad)
+    ax.set_ylim(y_min - box_h / 2 - y_pad, y_max + box_h / 2 + y_pad)
+    ax.set_aspect("equal")
     ax.axis("off")
     return _save(fig, output_path)
 
