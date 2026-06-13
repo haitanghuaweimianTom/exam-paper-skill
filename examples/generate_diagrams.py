@@ -68,8 +68,24 @@ def main():
     )
 
     flowchart(
-        nodes={"Start": (1, 4), "Input": (3, 4), "Process": (5, 4), "Output": (7, 4), "End": (9, 4)},
-        edges=[("Start", "Input"), ("Input", "Process"), ("Process", "Output"), ("Output", "End")],
+        nodes={
+            "开始": {"pos": (0, 0), "type": "start"},
+            "输入n": {"pos": (2, 0), "type": "io"},
+            "n>0?": {"pos": (4, 0), "type": "decision"},
+            "计算": {"pos": (6, 1.5), "type": "process"},
+            "报错": {"pos": (6, -1.5), "type": "process"},
+            "输出结果": {"pos": (8, 0), "type": "io"},
+            "结束": {"pos": (10, 0), "type": "end"},
+        },
+        edges=[
+            ("开始", "输入n"),
+            ("输入n", "n>0?"),
+            ("n>0?", "计算", "是"),
+            ("n>0?", "报错", "否"),
+            ("计算", "输出结果"),
+            ("报错", "输出结果"),
+            ("输出结果", "结束"),
+        ],
         output_path=os.path.join(out_dir, "diagram_flowchart.png"),
     )
 

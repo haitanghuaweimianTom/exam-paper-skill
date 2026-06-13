@@ -286,59 +286,138 @@ def venn_diagram(labels, output_path="diagram_venn.png"):
 
 
 def flowchart(nodes, edges, output_path="diagram_flow.png"):
-    """Draw a simple flowchart with proper boxes and edge-connected arrows.
+    """Draw a flowchart with standard symbols and edge labels.
 
     Args:
-        nodes: dict {name: (x, y)}
-        edges: list of (from, to)
+        nodes: dict mapping node name to either (x, y) tuple or dict with
+               keys 'pos' (required) and 'type' (optional).
+               Supported types: 'start'/'end' (stadium), 'process' (rectangle),
+               'decision' (diamond), 'io' (parallelogram).
+               Default type is 'process'.
+        edges: list of (from, to) or (from, to, label)
     """
-    from matplotlib.patches import FancyBboxPatch
+    from matplotlib.patches import FancyBboxPatch, Polygon
 
-    # Estimate figure size from node spread
-    xs, ys = zip(*nodes.values())
+    # Normalize node definitions
+    norm_nodes = {}
+    for name, val in nodes.items():
+        if isinstance(val, dict):
+            norm_nodes[name] = {"pos": val["pos"], "type": val.get("type", "process")}
+        else:
+            norm_nodes[name] = {"pos": val, "type": "process"}
+
+    xs, ys = zip(*[n["pos"] for n in norm_nodes.values()])
     x_min, x_max = min(xs), max(xs)
     y_min, y_max = min(ys), max(ys)
-    width = max(5, (x_max - x_min) * 1.1 + 1.5)
-    height = max(2.5, (y_max - y_min) * 1.5 + 1.5)
+    width = max(6, (x_max - x_min) * 1.2 + 2)
+    height = max(3.5, (y_max - y_min) * 1.6 + 2)
 
     fig, ax = plt.subplots(figsize=(width, height))
 
-    box_w, box_h = 1.0, 0.55
-    node_boxes = {}
-    for name, (x, y) in nodes.items():
-        rect = FancyBboxPatch(
-            (x - box_w / 2, y - box_h / 2), box_w, box_h,
-            boxstyle="round,pad=0.05,rounding_size=0.12",
-            facecolor="lightyellow", edgecolor="black", linewidth=1.2
-        )
-        ax.add_patch(rect)
-        ax.text(x, y, name, ha="center", va="center", fontsize=11)
-        node_boxes[name] = (x, y, box_w, box_h)
+    default_w, default_h = 1.1, 0.6
+    node_shapes = {}
 
-    def _edge_point(x1, y1, x2, y2, w, h):
-        """Compute intersection point from center (x1,y1) to center (x2,y2) with box border."""
+    for name, node in norm_nodes.items():
+        x, y = node["pos"]
+        ntype = node["type"]
+
+        if ntype in ("start", "end"):
+            w, h = default_w * 0.9, default_h
+            rect = FancyBboxPatch(
+                (x - w / 2, y - h / 2), w, h,
+                boxstyle="round,pad=0.02,rounding_size=0.25",
+                facecolor="#e8f5e9", edgecolor="black", linewidth=1.2
+            )
+            ax.add_patch(rect)
+            node_shapes[name] = (x, y, w, h, "rect")
+        elif ntype == "decision":
+            w, h = default_w * 1.0, default_h * 1.3
+            diamond = Polygon([
+                (x, y + h / 2), (x + w / 2, y),
+                (x, y - h / 2), (x - w / 2, y)
+            ], closed=True, facecolor="#fff3e0", edgecolor="black", linewidth=1.2)
+            ax.add_patch(diamond)
+            node_shapes[name] = (x, y, w, h, "diamond")
+        elif ntype == "io":
+            w, h = default_w * 1.1, default_h
+            skew = 0.2
+            para = Polygon([
+                (x - w / 2 + skew, y + h / 2), (x + w / 2 + skew, y + h / 2),
+                (x + w / 2 - skew, y - h / 2), (x - w / 2 - skew, y - h / 2)
+            ], closed=True, facecolor="#e3f2fd", edgecolor="black", linewidth=1.2)
+            ax.add_patch(para)
+            node_shapes[name] = (x, y, w, h, "io")
+        else:  # process / default
+            w, h = default_w, default_h
+            rect = FancyBboxPatch(
+                (x - w / 2, y - h / 2), w, h,
+                boxstyle="round,pad=0.02,rounding_size=0.08",
+                facecolor="#fffde7", edgecolor="black", linewidth=1.2
+            )
+            ax.add_patch(rect)
+            node_shapes[name] = (x, y, w, h, "rect")
+
+        ax.text(x, y, name, ha="center", va="center", fontsize=10)
+
+    def _edge_point(x1, y1, x2, y2, shape_info):
+        """Compute point on shape border along line from center (x1,y1) to target (x2,y2)."""
+        x, y, w, h, shape = shape_info
         dx, dy = x2 - x1, y2 - y1
         if abs(dx) < 1e-6 and abs(dy) < 1e-6:
-            return x1, y1
-        # Scale direction so it hits the box border
-        scale_x = float('inf') if abs(dx) < 1e-6 else (w / 2) / abs(dx)
-        scale_y = float('inf') if abs(dy) < 1e-6 else (h / 2) / abs(dy)
-        t = min(scale_x, scale_y)
-        return x1 + t * dx, y1 + t * dy
+            return x, y
 
-    for start, end in edges:
-        x1, y1, w1, h1 = node_boxes[start]
-        x2, y2, w2, h2 = node_boxes[end]
-        sx, sy = _edge_point(x1, y1, x2, y2, w1, h1)
-        ex, ey = _edge_point(x2, y2, x1, y1, w2, h2)
+        if shape == "diamond":
+            # Diamond is intersection of 4 half-planes; solve parametric t
+            # |x + t*dx - cx| / (w/2) + |y + t*dy - cy| / (h/2) = 1
+            # Try solving for each quadrant based on direction
+            t_candidates = []
+            if abs(dx) > 1e-6:
+                t_candidates.append((w / 2) / abs(dx))
+                t_candidates.append((-w / 2) / abs(dx))
+            if abs(dy) > 1e-6:
+                t_candidates.append((h / 2) / abs(dy))
+                t_candidates.append((-h / 2) / abs(dy))
+            for t_test in t_candidates:
+                if t_test > 0:
+                    px, py = x + t_test * dx, y + t_test * dy
+                    if abs(px - x) / (w / 2) + abs(py - y) / (h / 2) <= 1.01:
+                        return px, py
+            # Fallback
+            t = min((w / 2) / max(abs(dx), 1e-6), (h / 2) / max(abs(dy), 1e-6))
+            return x + t * dx, y + t * dy
+        else:
+            # Rectangle / parallelogram / stadium approximated by bounding box
+            scale_x = float('inf') if abs(dx) < 1e-6 else (w / 2) / abs(dx)
+            scale_y = float('inf') if abs(dy) < 1e-6 else (h / 2) / abs(dy)
+            t = min(scale_x, scale_y)
+            return x + t * dx, y + t * dy
+
+    for edge in edges:
+        if len(edge) == 2:
+            start, end = edge
+            label = None
+        else:
+            start, end, label = edge
+
+        shape1 = node_shapes[start]
+        shape2 = node_shapes[end]
+        x1, y1 = shape1[0], shape1[1]
+        x2, y2 = shape2[0], shape2[1]
+        sx, sy = _edge_point(x1, y1, x2, y2, shape1)
+        ex, ey = _edge_point(x2, y2, x1, y1, shape2)
         ax.annotate("", xy=(ex, ey), xytext=(sx, sy),
                     arrowprops=dict(arrowstyle="->", color="black", lw=1.2,
                                     connectionstyle="arc3,rad=0"))
+        if label:
+            mx, my = (sx + ex) / 2, (sy + ey) / 2
+            ax.text(mx, my + 0.12, label, ha="center", va="bottom", fontsize=9,
+                    bbox=dict(boxstyle="round,pad=0.15", facecolor="white",
+                              edgecolor="none", alpha=0.85))
 
-    x_pad = max(0.4, (x_max - x_min) * 0.08)
-    y_pad = max(0.4, (y_max - y_min) * 0.15)
-    ax.set_xlim(x_min - box_w / 2 - x_pad, x_max + box_w / 2 + x_pad)
-    ax.set_ylim(y_min - box_h / 2 - y_pad, y_max + box_h / 2 + y_pad)
+    x_pad = max(0.5, (x_max - x_min) * 0.1)
+    y_pad = max(0.5, (y_max - y_min) * 0.15)
+    ax.set_xlim(x_min - default_w - x_pad, x_max + default_w + x_pad)
+    ax.set_ylim(y_min - default_h - y_pad, y_max + default_h + y_pad)
     ax.set_aspect("equal")
     ax.axis("off")
     return _save(fig, output_path)

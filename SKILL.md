@@ -313,7 +313,7 @@ The skill includes `tools/diagram_tools.py` with ready-to-use functions:
 - `box_plot()`
 - `probability_tree()`
 - `venn_diagram()`
-- `flowchart()`
+- `flowchart()` — supports standard flowchart symbols
 
 Call them from your generation script:
 
@@ -362,6 +362,29 @@ bar_chart(
     values=[10, 20, 15],
     output_path="output/diagram_bar.png",
     title="Sample Comparison"
+)
+
+# Example: standard flowchart with decision diamond and edge labels
+flowchart(
+    nodes={
+        "开始": {"pos": (0, 0), "type": "start"},
+        "输入n": {"pos": (2, 0), "type": "io"},
+        "n>0?": {"pos": (4, 0), "type": "decision"},
+        "计算": {"pos": (6, 1.5), "type": "process"},
+        "报错": {"pos": (6, -1.5), "type": "process"},
+        "输出结果": {"pos": (8, 0), "type": "io"},
+        "结束": {"pos": (10, 0), "type": "end"},
+    },
+    edges=[
+        ("开始", "输入n"),
+        ("输入n", "n>0?"),
+        ("n>0?", "计算", "是"),
+        ("n>0?", "报错", "否"),
+        ("计算", "输出结果"),
+        ("报错", "输出结果"),
+        ("输出结果", "结束"),
+    ],
+    output_path="output/diagram_flowchart.png"
 )
 ```
 
