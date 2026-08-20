@@ -1,4 +1,4 @@
-# Exam Paper Skill
+# Exam Review Skill
 
 通用跨学科的试卷、讲义、复习全书与复习资料生成 Skill。从任意学科的材料中提取知识，生成包含「举一反三」式问题的精美 Markdown + PDF。
 
